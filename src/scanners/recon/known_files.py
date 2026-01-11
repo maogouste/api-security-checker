@@ -87,7 +87,7 @@ class KnownFilesScanner(Scanner):
         "info.php": ("PHP info page", Severity.MEDIUM),
         "test.php": ("Test file", Severity.LOW),
         "adminer.php": ("Adminer DB tool", Severity.HIGH),
-    ]
+    }
 
     async def scan(self, target: Target) -> ScanResult:
         result = ScanResult(scanner_name=self.name)

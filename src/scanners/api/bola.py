@@ -30,6 +30,7 @@ class BOLAScanner(Scanner):
 
     async def _get_token(self, target: Target) -> str | None:
         """Get auth token."""
+        # Try JSON first (Express, Go, PHP, Java)
         try:
             resp = self.client.post(
                 f"{target.base_url}{target.login_endpoint}",
@@ -39,6 +40,18 @@ class BOLAScanner(Scanner):
                 return resp.json().get("access_token")
         except Exception:
             pass
+
+        # Try form data (FastAPI OAuth2)
+        try:
+            resp = self.client.post(
+                f"{target.base_url}{target.login_endpoint}",
+                data={"username": target.valid_username, "password": target.valid_password},
+            )
+            if resp.status_code == 200:
+                return resp.json().get("access_token")
+        except Exception:
+            pass
+
         return None
 
     async def _check_user_bola(self, target: Target, token: str, result: ScanResult):

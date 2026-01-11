@@ -37,13 +37,24 @@ class AuthScanner(Scanner):
 
     async def _check_user_enumeration(self, target: Target, result: ScanResult):
         """Check if login reveals user existence."""
+        def get_error_msg(resp):
+            """Extract error message from response."""
+            try:
+                data = resp.json()
+                detail = data.get("detail", data.get("message", ""))
+                if isinstance(detail, list):
+                    return str(detail)
+                return str(detail)
+            except Exception:
+                return ""
+
         try:
             # Try invalid user
             resp1 = self.client.post(
                 f"{target.base_url}{target.login_endpoint}",
                 json={"username": "nonexistent_user_xyz", "password": "wrong"},
             )
-            msg1 = resp1.json().get("detail", resp1.json().get("message", ""))
+            msg1 = get_error_msg(resp1)
 
             # Try valid user with wrong password
             if target.valid_username:
@@ -51,7 +62,7 @@ class AuthScanner(Scanner):
                     f"{target.base_url}{target.login_endpoint}",
                     json={"username": target.valid_username, "password": "wrong_password"},
                 )
-                msg2 = resp2.json().get("detail", resp2.json().get("message", ""))
+                msg2 = get_error_msg(resp2)
 
                 # If messages differ, user enumeration is possible
                 if msg1.lower() != msg2.lower() and msg1 and msg2:
