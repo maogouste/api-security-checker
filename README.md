@@ -1,106 +1,99 @@
 # API Security Checker
 
-A fast, modern API security scanner for REST and GraphQL APIs.
+A fast, modern CLI tool to scan REST and GraphQL APIs for security vulnerabilities.
+
+```
+$ apisec vulnapi
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ API Security Scan Results                                                    │
+│ http://localhost:8000                                                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+   Summary
+ CRITICAL  1    SQL Injection
+ HIGH      2    CORS, BOLA
+ MEDIUM    5    Rate limiting, Headers
+```
 
 ## Features
 
-- **API Vulnerability Scanning**
-  - Authentication weaknesses (OWASP API2)
-  - Broken Object Level Authorization (OWASP API1)
-  - SQL and Command Injection (OWASP API8)
-  - GraphQL-specific vulnerabilities (G01-G05)
+**API Vulnerability Scanners**
+- Authentication weaknesses (user enumeration, weak JWT, no rate limiting)
+- Broken Object Level Authorization (BOLA/IDOR)
+- SQL and Command Injection
+- GraphQL-specific (introspection, depth, batching, auth bypass)
 
-- **Reconnaissance**
-  - Exposed sensitive files (.env, .git, backups)
-  - Common endpoints discovery (admin, debug, metrics)
-  - Security headers analysis
+**Reconnaissance**
+- 50+ sensitive files (.env, .git, backups, configs)
+- 60+ common endpoints (admin, debug, actuator, metrics)
+- Security headers analysis (CORS, CSP, HSTS)
 
-- **Reporting**
-  - Rich console output
-  - JSON export for CI/CD integration
+**Output**
+- Rich console with colors and tables
+- JSON export for CI/CD pipelines
 
 ## Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/youruser/api-security-checker.git
+git clone https://github.com/maogouste/api-security-checker.git
 cd api-security-checker
 
-# Install with pip
+python3 -m venv venv
+source venv/bin/activate
 pip install -e .
-
-# Or with dependencies
-pip install -e ".[dev]"
 ```
 
-## Usage
-
-### Basic Scan
+## Quick Start
 
 ```bash
-# Scan an API
-apisec scan http://localhost:8000
+# Scan any API
+apisec scan https://api.example.com
 
-# With authentication testing
-apisec scan http://localhost:8000 -u admin -p password123
+# With credentials for auth testing
+apisec scan https://api.example.com -u admin -p secret
 
 # Specific scan type
-apisec scan http://localhost:8000 --type graphql
+apisec scan https://api.example.com --type injection
 
-# Export to JSON
-apisec scan http://localhost:8000 -o report.json
+# Export report
+apisec scan https://api.example.com -o report.json
 ```
 
-### VulnAPI Quick Scan
+## Scan Types
 
-```bash
-# Scan VulnAPI with preset config
-apisec vulnapi
-
-# Different backend
-apisec vulnapi --backend express
-apisec vulnapi --backend go
-```
-
-### Scan Types
-
-| Type | Description |
-|------|-------------|
-| `all` | Run all scanners (default) |
-| `api` | API vulnerability scanners only |
-| `recon` | Reconnaissance scanners only |
-| `auth` | Authentication scanners |
-| `injection` | Injection scanners |
-| `graphql` | GraphQL scanners |
+| Type | Scanners |
+|------|----------|
+| `all` | Everything (default) |
+| `api` | Auth, BOLA, Injection, GraphQL |
+| `recon` | Files, Endpoints, Headers |
+| `auth` | Authentication only |
+| `injection` | SQLi, Command injection |
+| `graphql` | GraphQL-specific |
 | `headers` | Security headers |
-| `files` | Known files discovery |
-| `endpoints` | Endpoint discovery |
-
-### List Scanners
-
-```bash
-apisec list-scanners
-```
+| `files` | Sensitive files |
+| `endpoints` | Common paths |
 
 ## Scanners
 
-| Scanner | Vulnerabilities | OWASP |
-|---------|-----------------|-------|
-| AuthScanner | User enumeration, weak JWT, no rate limiting | API2, API4 |
-| BOLAScanner | Broken Object Level Authorization | API1 |
+| Scanner | Detects | OWASP |
+|---------|---------|-------|
+| AuthScanner | User enumeration, weak JWT, no rate limit | API2, API4 |
+| BOLAScanner | Access to other users' data | API1 |
 | InjectionScanner | SQL injection, Command injection | API8 |
-| GraphQLScanner | Introspection, depth, batching, auth bypass | API1-API4 |
-| HeadersScanner | Missing security headers, CORS | API7 |
-| KnownFilesScanner | .env, .git, backups, configs | - |
-| EndpointsScanner | Admin, debug, metrics endpoints | - |
+| GraphQLScanner | Introspection, depth attacks, batching | API1-4 |
+| HeadersScanner | Missing security headers, CORS issues | API7 |
+| KnownFilesScanner | .env, .git, .sql, configs exposed | - |
+| EndpointsScanner | /admin, /debug, /actuator, /metrics | - |
 
 ## Configuration
 
-Create a YAML config file for your target:
+Create a YAML config for targets you scan frequently:
 
 ```yaml
-name: MyAPI
-base_url: http://api.example.com
+# config/myapi.yaml
+name: My Production API
+base_url: https://api.mycompany.com
 
 valid_username: testuser
 valid_password: testpass
@@ -109,30 +102,38 @@ login_endpoint: /auth/login
 graphql_endpoint: /graphql
 ```
 
-Use with:
-
 ```bash
-apisec scan http://api.example.com -c config/myapi.yaml
+apisec scan https://api.mycompany.com -c config/myapi.yaml
 ```
 
 ## Exit Codes
 
 | Code | Meaning |
 |------|---------|
-| 0 | No vulnerabilities found |
-| 1 | Low/Medium vulnerabilities found |
-| 2 | Critical/High vulnerabilities found |
+| 0 | No vulnerabilities |
+| 1 | Low/Medium findings |
+| 2 | Critical/High findings |
 
-## Integration with VulnAPI
+Useful for CI/CD:
+```bash
+apisec scan $API_URL || exit 1
+```
 
-This tool is designed to work with [VulnAPI](https://github.com/youruser/vulnapi), an intentionally vulnerable API for security learning.
+## Use with VulnAPI
+
+This tool pairs perfectly with [VulnAPI](https://github.com/maogouste/vulnapi), an intentionally vulnerable API for learning.
 
 ```bash
-# Start VulnAPI
-cd vulnapi && uvicorn app.main:app --port 8000
+# Terminal 1: Start VulnAPI
+cd vulnapi/implementations/python-fastapi
+uvicorn app.main:app
 
-# Scan it
-apisec vulnapi
+# Terminal 2: Scan it
+apisec vulnapi                    # FastAPI (port 8000)
+apisec vulnapi --backend express  # Express (port 3001)
+apisec vulnapi --backend go       # Go/Gin (port 3002)
+apisec vulnapi --backend php      # PHP (port 3003)
+apisec vulnapi --backend java     # Spring Boot (port 3004)
 ```
 
 ## License
