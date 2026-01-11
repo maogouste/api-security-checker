@@ -1,0 +1,32 @@
+# VulnAPI preset configuration
+name: VulnAPI
+base_url: http://localhost:8000
+
+# Authentication
+valid_username: john
+valid_password: password123
+login_endpoint: /api/login
+auth_header: Authorization
+auth_prefix: Bearer
+
+# Endpoints
+graphql_endpoint: /graphql
+endpoints:
+  - /api/users
+  - /api/products
+  - /api/tools/ping
+  - /api/tools/dns
+  - /api/v1/users
+
+# Expected vulnerabilities (for validation)
+# V01: BOLA - /api/users/{id}
+# V02: Broken Auth - weak JWT, user enumeration
+# V03: Excessive Data Exposure - /api/users/me
+# V04: No Rate Limiting - /api/login
+# V05: Mass Assignment - PUT /api/users/me
+# V06: SQL Injection - /api/products?search=
+# V07: Command Injection - /api/tools/ping
+# V08: Security Misconfiguration - CORS, headers
+# V09: Improper Assets Management - /api/v1/
+# V10: Insufficient Logging - no audit trail
+# G01-G05: GraphQL vulnerabilities
