@@ -3,7 +3,7 @@
 A fast, modern CLI tool to scan REST and GraphQL APIs for security vulnerabilities.
 
 ```
-$ apisec vulnapi
+$ apisec scan http://localhost:8000 -u john -p password123
 
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │ API Security Scan Results                                                    │
@@ -11,27 +11,35 @@ $ apisec vulnapi
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
    Summary
- CRITICAL  1    SQL Injection
- HIGH      2    CORS, BOLA
- MEDIUM    5    Rate limiting, Headers
+ CRITICAL  2    SQL Injection, Command Injection
+ HIGH      3    CORS, BOLA, Mass Assignment
+ MEDIUM    5    Rate limiting, Headers, Logging
 ```
 
 ## Features
 
-**API Vulnerability Scanners**
-- Authentication weaknesses (user enumeration, weak JWT, no rate limiting)
-- Broken Object Level Authorization (BOLA/IDOR)
-- SQL and Command Injection
+**API Vulnerability Scanners (OWASP API Top 10)**
+- V01: Broken Object Level Authorization (BOLA/IDOR)
+- V02: Authentication weaknesses (user enumeration, weak JWT, no rate limiting)
+- V03: Excessive Data Exposure (sensitive fields leaked)
+- V05: Mass Assignment (role escalation, hidden fields)
+- V06: SQL Injection with database-specific detection
+- V07: Command Injection with output pattern matching
+- V09: Legacy API versions detection
+- V10: Insufficient Logging analysis
 - GraphQL-specific (introspection, depth, batching, auth bypass)
 
 **Reconnaissance**
 - 50+ sensitive files (.env, .git, backups, configs)
 - 60+ common endpoints (admin, debug, actuator, metrics)
 - Security headers analysis (CORS, CSP, HSTS)
+- Endpoint fuzzing with OpenAPI spec parsing
 
-**Output**
+**Output Formats**
 - Rich console with colors and tables
-- JSON export for CI/CD pipelines
+- JSON export for automation
+- HTML standalone reports
+- SARIF 2.1.0 for GitHub Code Scanning
 
 ## Installation
 
@@ -56,8 +64,10 @@ apisec scan https://api.example.com -u admin -p secret
 # Specific scan type
 apisec scan https://api.example.com --type injection
 
-# Export report
-apisec scan https://api.example.com -o report.json
+# Export reports
+apisec scan https://api.example.com -o report.json      # JSON
+apisec scan https://api.example.com --html report.html  # HTML
+apisec scan https://api.example.com --sarif report.sarif # SARIF
 ```
 
 ## Scan Types
@@ -78,13 +88,18 @@ apisec scan https://api.example.com -o report.json
 
 | Scanner | Detects | OWASP |
 |---------|---------|-------|
-| AuthScanner | User enumeration, weak JWT, no rate limit | API2, API4 |
 | BOLAScanner | Access to other users' data | API1 |
+| AuthScanner | User enumeration, weak JWT, no rate limit | API2, API4 |
+| ExposureScanner | Sensitive data in responses (SSN, CC, keys) | API3 |
+| MassAssignmentScanner | Role escalation, hidden field modification | API6 |
 | InjectionScanner | SQL injection, Command injection | API8 |
+| LegacyScanner | Deprecated API versions (/v1/, /v2/) | API9 |
+| LoggingScanner | Missing security event logging | API10 |
 | GraphQLScanner | Introspection, depth attacks, batching | API1-4 |
 | HeadersScanner | Missing security headers, CORS issues | API7 |
 | KnownFilesScanner | .env, .git, .sql, configs exposed | - |
 | EndpointsScanner | /admin, /debug, /actuator, /metrics | - |
+| FuzzerScanner | Hidden endpoints via OpenAPI + fuzzing | - |
 
 ## Configuration
 
@@ -119,22 +134,41 @@ Useful for CI/CD:
 apisec scan $API_URL || exit 1
 ```
 
-## Use with VulnAPI
+## Use with API Security Dojo
 
-This tool pairs perfectly with [VulnAPI](https://github.com/maogouste/vulnapi), an intentionally vulnerable API for learning.
+This tool pairs perfectly with [API Security Dojo](https://github.com/maogouste/api-security-dojo), an intentionally vulnerable API for learning.
 
 ```bash
-# Terminal 1: Start VulnAPI
-cd vulnapi/implementations/python-fastapi
-uvicorn app.main:app
+# Terminal 1: Start API Security Dojo
+cd api-security-dojo/implementations/python-fastapi
+hatch run serve  # http://localhost:8000
 
 # Terminal 2: Scan it
-apisec vulnapi                    # FastAPI (port 8000)
-apisec vulnapi --backend express  # Express (port 3001)
-apisec vulnapi --backend go       # Go/Gin (port 3002)
-apisec vulnapi --backend php      # PHP (port 3003)
-apisec vulnapi --backend java     # Spring Boot (port 3004)
+apisec scan http://localhost:8000 -u john -p password123
+
+# Other backends
+# Go:    http://localhost:3002
+# PHP:   http://localhost:3003
+# Java:  http://localhost:3004
+# Node:  http://localhost:3005
 ```
+
+## CI/CD Integration
+
+Use SARIF output for GitHub Code Scanning:
+
+```yaml
+# .github/workflows/api-security.yml
+- name: Run API Security Scan
+  run: apisec scan ${{ secrets.API_URL }} --sarif results.sarif
+
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results.sarif
+```
+
+See `.github/workflows/api-security-scan.yml` for a complete example.
 
 ## License
 
