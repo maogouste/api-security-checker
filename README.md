@@ -151,6 +151,7 @@ apisec scan http://localhost:8000 -u john -p password123
 # PHP:   http://localhost:3003
 # Java:  http://localhost:3004
 # Node:  http://localhost:3005
+# Rust:  http://localhost:3006
 ```
 
 ## CI/CD Integration
