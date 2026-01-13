@@ -1,6 +1,8 @@
 """Endpoints scanner - discovers common API endpoints."""
 
-from src.core import Scanner, ScanResult, Finding, Severity, Target
+from src.core import Scanner, ScanResult, Finding, Severity, Target, get_logger
+
+logger = get_logger("scanners.endpoints")
 
 
 class EndpointsScanner(Scanner):
@@ -147,5 +149,5 @@ class EndpointsScanner(Scanner):
                         references=["https://owasp.org/www-project-web-security-testing-guide/"],
                     ))
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Failed to check endpoint {endpoint}: {e}")

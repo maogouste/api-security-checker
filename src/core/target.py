@@ -26,6 +26,9 @@ class Target:
     # GraphQL
     graphql_endpoint: Optional[str] = None
 
+    # SSL verification (default: True for security)
+    verify_ssl: bool = True
+
     @classmethod
     def from_yaml(cls, path: str) -> "Target":
         """Load target from YAML file."""

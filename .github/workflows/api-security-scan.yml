@@ -1,0 +1,119 @@
+name: API Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run weekly security scan
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'API URL to scan'
+        required: true
+        default: 'http://localhost:8000'
+      scan_type:
+        description: 'Scan type (all, api, recon, injection, graphql)'
+        required: false
+        default: 'all'
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install API Security Checker
+        run: |
+          pip install -e .
+
+      - name: Start test API (if needed)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          # Start your API server here for testing
+          # Example: docker-compose up -d
+          echo "Starting test API..."
+
+      - name: Run Security Scan
+        id: scan
+        run: |
+          TARGET="${{ github.event.inputs.target_url || 'http://localhost:8000' }}"
+          SCAN_TYPE="${{ github.event.inputs.scan_type || 'all' }}"
+
+          # Run scan with SARIF output for GitHub Code Scanning
+          apisec scan "$TARGET" \
+            --type "$SCAN_TYPE" \
+            --sarif results.sarif \
+            --output results.json \
+            --html report.html \
+            --parallel 5 \
+            || true  # Don't fail the workflow on findings
+
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+          category: api-security
+
+      - name: Upload HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: |
+            report.html
+            results.json
+
+      - name: Check for Critical Findings
+        run: |
+          CRITICAL=$(jq '.summary.by_severity.critical' results.json 2>/dev/null || echo 0)
+          HIGH=$(jq '.summary.by_severity.high' results.json 2>/dev/null || echo 0)
+
+          echo "Critical: $CRITICAL"
+          echo "High: $HIGH"
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL critical vulnerabilities!"
+            exit 1
+          fi
+
+      - name: Comment PR with Summary
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('results.json', 'utf8'));
+            const summary = results.summary;
+
+            const body = `## API Security Scan Results
+
+            | Severity | Count |
+            |----------|-------|
+            | Critical | ${summary.by_severity.critical} |
+            | High | ${summary.by_severity.high} |
+            | Medium | ${summary.by_severity.medium} |
+            | Low | ${summary.by_severity.low} |
+
+            **Total Findings:** ${summary.total_findings}
+
+            See the [Security tab](${context.payload.repository.html_url}/security/code-scanning) for details.
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

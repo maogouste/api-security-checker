@@ -1,0 +1,265 @@
+# API Security Learning Paths
+# Custom challenges and learning paths configuration
+
+# ===========================================
+# Challenge Definitions
+# ===========================================
+challenges:
+  # OWASP API Security Top 10
+  - id: V01
+    name: "Broken Object Level Authorization (BOLA)"
+    description: "Access another user's data by manipulating object IDs"
+    difficulty: easy
+    scanner_type: bola
+    vulnerability_id: V01-BOLA
+    hints:
+      - "Try accessing /api/users/2 when logged in as user 1"
+      - "Check if the API validates ownership of resources"
+      - "Look for predictable IDs in the URL"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+    learning_objectives:
+      - "Understand IDOR vulnerabilities"
+      - "Learn to test authorization controls"
+      - "Identify insecure direct object references"
+
+  - id: V02
+    name: "Broken Authentication"
+    description: "Exploit weak authentication mechanisms"
+    difficulty: easy
+    scanner_type: auth
+    vulnerability_id: V02-AUTH
+    hints:
+      - "Check for user enumeration via different error messages"
+      - "Look at JWT token structure and algorithm"
+      - "Test for rate limiting on login endpoint"
+      - "Try the 'none' algorithm attack on JWT"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/"
+      - "https://jwt.io/"
+    learning_objectives:
+      - "Identify authentication weaknesses"
+      - "Understand JWT security"
+      - "Test for brute force protection"
+
+  - id: V03
+    name: "Excessive Data Exposure"
+    description: "Find sensitive data exposed in API responses"
+    difficulty: easy
+    scanner_type: bola
+    vulnerability_id: V03-DATA
+    hints:
+      - "Check the response fields for sensitive information"
+      - "Look for SSN, credit card, or internal notes"
+      - "Compare public vs authenticated responses"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa3-excessive-data-exposure/"
+    learning_objectives:
+      - "Identify sensitive data in responses"
+      - "Understand data minimization principles"
+      - "Learn about response filtering"
+
+  - id: V05
+    name: "Mass Assignment"
+    description: "Modify protected fields via mass assignment"
+    difficulty: medium
+    scanner_type: bola
+    vulnerability_id: V05-MASS
+    hints:
+      - "Try to set 'role' or 'is_admin' in user update"
+      - "Send extra fields in POST/PUT requests"
+      - "Look for fields that shouldn't be user-modifiable"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/"
+    learning_objectives:
+      - "Understand mass assignment vulnerabilities"
+      - "Learn to test field-level authorization"
+
+  - id: V06
+    name: "SQL Injection"
+    description: "Exploit SQL injection in search parameters"
+    difficulty: medium
+    scanner_type: injection
+    vulnerability_id: V06-SQLI
+    hints:
+      - "Try the search parameter with a single quote"
+      - "Use UNION SELECT to extract data"
+      - "Try boolean-based blind injection"
+      - "Test: ' OR '1'='1"
+    resources:
+      - "https://owasp.org/www-community/attacks/SQL_Injection"
+      - "https://portswigger.net/web-security/sql-injection"
+    learning_objectives:
+      - "Understand SQL injection types"
+      - "Learn to craft injection payloads"
+      - "Practice data extraction techniques"
+
+  - id: V07
+    name: "Command Injection"
+    description: "Execute OS commands via vulnerable endpoints"
+    difficulty: hard
+    scanner_type: injection
+    vulnerability_id: V07-CMDI
+    hints:
+      - "Try the ping endpoint with command separators"
+      - "Use ; | & or backticks to chain commands"
+      - "Try to read /etc/passwd"
+      - "Test: 127.0.0.1; id"
+    resources:
+      - "https://owasp.org/www-community/attacks/Command_Injection"
+    learning_objectives:
+      - "Understand command injection vectors"
+      - "Learn to chain OS commands"
+      - "Practice blind command injection"
+
+  - id: V08
+    name: "Security Misconfiguration"
+    description: "Find security misconfigurations in the API"
+    difficulty: easy
+    scanner_type: headers
+    vulnerability_id: V08-MISCONFIG
+    hints:
+      - "Check for missing security headers"
+      - "Look for debug endpoints (/debug, /actuator)"
+      - "Check CORS configuration"
+      - "Look for exposed server versions"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/"
+    learning_objectives:
+      - "Identify security header issues"
+      - "Understand secure configuration"
+      - "Learn about defense in depth"
+
+  - id: V09
+    name: "Improper Assets Management"
+    description: "Find legacy or undocumented API versions"
+    difficulty: medium
+    scanner_type: bola
+    vulnerability_id: V09-ASSETS
+    hints:
+      - "Try /api/v1/ endpoints"
+      - "Look for deprecated API versions"
+      - "Check if old versions lack security controls"
+    resources:
+      - "https://owasp.org/API-Security/editions/2023/en/0xa9-improper-assets-management/"
+    learning_objectives:
+      - "Understand API versioning risks"
+      - "Learn to discover shadow APIs"
+
+  # GraphQL Vulnerabilities
+  - id: G01
+    name: "GraphQL Introspection"
+    description: "Exploit enabled introspection to discover schema"
+    difficulty: easy
+    scanner_type: graphql
+    vulnerability_id: G01-INTROSPECTION
+    hints:
+      - "Send __schema query to discover types"
+      - "Look for sensitive fields in the schema"
+      - "Enumerate all queries and mutations"
+    resources:
+      - "https://graphql.org/learn/introspection/"
+    learning_objectives:
+      - "Understand GraphQL introspection"
+      - "Learn to enumerate GraphQL schemas"
+
+  - id: G02
+    name: "GraphQL Depth Attack"
+    description: "Exploit missing query depth limits"
+    difficulty: medium
+    scanner_type: graphql
+    vulnerability_id: G02-DEPTH
+    hints:
+      - "Create deeply nested queries"
+      - "Try to cause resource exhaustion"
+      - "Test circular relationships"
+    resources:
+      - "https://www.apollographql.com/blog/graphql/security/securing-your-graphql-api-from-malicious-queries/"
+    learning_objectives:
+      - "Understand GraphQL DoS vectors"
+      - "Learn query complexity limits"
+
+  - id: G03
+    name: "GraphQL Batching Attack"
+    description: "Exploit batch query processing"
+    difficulty: medium
+    scanner_type: graphql
+    vulnerability_id: G03-BATCHING
+    hints:
+      - "Send multiple queries in one request"
+      - "Try to bypass rate limiting"
+      - "Test alias-based batching"
+    resources:
+      - "https://lab.wallarm.com/graphql-batching-attack/"
+    learning_objectives:
+      - "Understand batch query attacks"
+      - "Learn about rate limiting bypass"
+
+# ===========================================
+# Learning Paths
+# ===========================================
+paths:
+  - id: beginner
+    name: "API Security Fundamentals"
+    description: "Learn the basics of API security testing"
+    challenges:
+      - V01  # BOLA - Easy entry point
+      - V03  # Data Exposure - Visual, easy to understand
+      - V02  # Auth - Important foundation
+      - V08  # Misconfig - Headers are easy to check
+    prerequisites: []
+
+  - id: intermediate
+    name: "Injection Attacks"
+    description: "Master injection vulnerabilities"
+    challenges:
+      - V06  # SQL Injection
+      - V07  # Command Injection
+      - V05  # Mass Assignment
+    prerequisites:
+      - beginner
+
+  - id: graphql
+    name: "GraphQL Security"
+    description: "Secure GraphQL APIs"
+    challenges:
+      - G01  # Introspection
+      - G02  # Depth Attack
+      - G03  # Batching
+    prerequisites:
+      - beginner
+
+  - id: advanced
+    name: "Advanced API Attacks"
+    description: "Complex attack chains and exploitation"
+    challenges:
+      - V09  # Assets Management
+      - V06  # SQLi (advanced)
+      - V07  # CMDi (advanced)
+      - G02  # GraphQL DoS
+    prerequisites:
+      - intermediate
+      - graphql
+
+  - id: owasp-top10
+    name: "OWASP API Top 10"
+    description: "Complete OWASP API Security coverage"
+    challenges:
+      - V01
+      - V02
+      - V03
+      - V05
+      - V06
+      - V07
+      - V08
+      - V09
+    prerequisites: []
+
+  - id: quick-start
+    name: "Quick Start"
+    description: "Get started with 3 easy challenges"
+    challenges:
+      - V01  # BOLA
+      - V08  # Misconfig
+      - G01  # GraphQL Introspection
+    prerequisites: []

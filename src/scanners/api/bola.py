@@ -1,6 +1,8 @@
 """BOLA (Broken Object Level Authorization) scanner."""
 
-from src.core import Scanner, ScanResult, Finding, Severity, Target
+from src.core import Scanner, ScanResult, Finding, Severity, Target, get_logger
+
+logger = get_logger("scanners.bola")
 
 
 class BOLAScanner(Scanner):
@@ -38,8 +40,8 @@ class BOLAScanner(Scanner):
             )
             if resp.status_code == 200:
                 return resp.json().get("access_token")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"JSON login failed: {e}")
 
         # Try form data (FastAPI OAuth2)
         try:
@@ -49,8 +51,8 @@ class BOLAScanner(Scanner):
             )
             if resp.status_code == 200:
                 return resp.json().get("access_token")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Form login failed: {e}")
 
         return None
 

@@ -1,6 +1,8 @@
 """Security headers scanner."""
 
-from src.core import Scanner, ScanResult, Finding, Severity, Target
+from src.core import Scanner, ScanResult, Finding, Severity, Target, get_logger
+
+logger = get_logger("scanners.headers")
 
 
 class HeadersScanner(Scanner):
@@ -146,5 +148,5 @@ class HeadersScanner(Scanner):
                     references=["https://owasp.org/www-project-web-security-testing-guide/"],
                 ))
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"CORS check failed: {e}")
