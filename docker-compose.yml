@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # API Security Checker Scanner
+  scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-security-checker
+    environment:
+      - TARGET_URL=${TARGET_URL:-http://host.docker.internal:8000}
+      - TARGET_USER=${TARGET_USER:-john}
+      - TARGET_PASS=${TARGET_PASS:-password123}
+    volumes:
+      - ./reports:/app/reports
+    # Default: run scan against target
+    command: >
+      apisec scan ${TARGET_URL:-http://host.docker.internal:8000}
+      -u ${TARGET_USER:-john}
+      -p ${TARGET_PASS:-password123}
+      -o /app/reports/report.json
+      --html /app/reports/report.html
+
+  # Interactive mode for training
+  training:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api-security-checker-training
+    stdin_open: true
+    tty: true
+    environment:
+      - TARGET_URL=${TARGET_URL:-http://host.docker.internal:8000}
+    command: apisec train
+    profiles:
+      - training
+
+# Usage:
+# 1. Scan an API:
+#    TARGET_URL=http://api.example.com docker compose up scanner
+#
+# 2. Training mode:
+#    docker compose --profile training run training
+#
+# 3. Scan API Security Dojo (running on host):
+#    docker compose up scanner
