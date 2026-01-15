@@ -1,6 +1,7 @@
 """HTML reporter - generates standalone HTML reports."""
 
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from typing import List
 from src.core import ScanResult, Severity
@@ -68,24 +69,24 @@ class HTMLReporter:
             html_parts.append(f'''
             <div class="finding {severity_class}">
                 <div class="finding-header">
-                    <span class="severity-badge {severity_class}">{finding.severity.value.upper()}</span>
-                    <span class="finding-id">{finding.id}</span>
-                    <h3>{finding.name}</h3>
+                    <span class="severity-badge {severity_class}">{escape(finding.severity.value.upper())}</span>
+                    <span class="finding-id">{escape(finding.id)}</span>
+                    <h3>{escape(finding.name)}</h3>
                 </div>
                 <div class="finding-body">
-                    <p class="description">{finding.description}</p>
+                    <p class="description">{escape(finding.description)}</p>
                     <div class="finding-details">
                         <div class="detail">
                             <strong>Endpoint:</strong>
-                            <code>{finding.endpoint}</code>
+                            <code>{escape(finding.endpoint)}</code>
                         </div>
                         <div class="detail">
                             <strong>Evidence:</strong>
-                            <pre>{finding.evidence}</pre>
+                            <pre>{escape(finding.evidence)}</pre>
                         </div>
                         <div class="detail">
                             <strong>Remediation:</strong>
-                            <p>{finding.remediation}</p>
+                            <p>{escape(finding.remediation)}</p>
                         </div>
                         {self._render_references(finding.references)}
                     </div>
@@ -99,7 +100,7 @@ class HTMLReporter:
         """Render references as links."""
         if not references:
             return ""
-        links = " ".join(f'<a href="{ref}" target="_blank">{ref[:50]}...</a>' for ref in references)
+        links = " ".join(f'<a href="{escape(ref)}" target="_blank">{escape(ref[:50])}...</a>' for ref in references)
         return f'<div class="detail"><strong>References:</strong> {links}</div>'
 
     def _render_template(
@@ -116,7 +117,7 @@ class HTMLReporter:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Security Report - {target_url}</title>
+    <title>API Security Report - {escape(target_url)}</title>
     <style>
         :root {{
             --critical: #dc2626;
@@ -246,7 +247,7 @@ class HTMLReporter:
         <header>
             <h1>API Security Scan Report</h1>
             <div class="meta">
-                <div>Target: <strong>{target_url}</strong></div>
+                <div>Target: <strong>{escape(target_url)}</strong></div>
                 <div>Generated: {timestamp}</div>
                 <div>Scanners: {len(summary["scanners_run"])} | Findings: {total}</div>
             </div>

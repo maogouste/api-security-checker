@@ -132,13 +132,14 @@ class InjectionScanner(Scanner):
 
                     # Check for time-based blind SQLi (if SLEEP/WAITFOR in payload)
                     if not is_vulnerable and any(t in payload.upper() for t in ["SLEEP", "WAITFOR", "PG_SLEEP"]):
-                        import time
-                        start = time.time()
+                        import asyncio
+                        loop = asyncio.get_event_loop()
+                        start = loop.time()
                         try:
                             self.client.get(url, headers=headers, timeout=10)
                         except Exception:
                             pass
-                        elapsed = time.time() - start
+                        elapsed = loop.time() - start
                         if elapsed >= 4.5:  # Payload usually has SLEEP(5)
                             is_vulnerable = True
                             evidence = f"Time-based blind SQLi: response delayed {elapsed:.1f}s"
@@ -196,8 +197,9 @@ class InjectionScanner(Scanner):
 
                     # Check for blind command injection via timing
                     if any(t in payload for t in ["sleep", "ping -c"]):
-                        import time
-                        start = time.time()
+                        import asyncio
+                        loop = asyncio.get_event_loop()
+                        start = loop.time()
                         try:
                             self.client.post(
                                 f"{target.base_url}{endpoint}",
@@ -207,7 +209,7 @@ class InjectionScanner(Scanner):
                             )
                         except Exception:
                             pass
-                        elapsed = time.time() - start
+                        elapsed = loop.time() - start
                         if elapsed >= 4.5:
                             result.add_finding(Finding(
                                 id="V07-CMDI-BLIND",
