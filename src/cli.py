@@ -2,15 +2,14 @@
 
 import asyncio
 from pathlib import Path
-from typing import Optional, List
 
 import httpx
 import typer
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TaskID
 
 from src.core import Target, setup_logging, get_logger
-from src.core.scanner import ScanResult
+from src.core.scanner import Scanner, ScanResult
 from src.scanners import (
     AuthScanner,
     BOLAScanner,
@@ -35,7 +34,7 @@ app = typer.Typer(
 console = Console()
 
 
-def get_all_scanners(client: httpx.Client) -> list:
+def get_all_scanners(client: httpx.Client) -> list[Scanner]:
     """Get all available scanners."""
     return [
         # V01-V10 Scanners
@@ -55,7 +54,7 @@ def get_all_scanners(client: httpx.Client) -> list:
     ]
 
 
-def get_scanners_by_type(client: httpx.Client, scan_type: str) -> list:
+def get_scanners_by_type(client: httpx.Client, scan_type: str) -> list[Scanner]:
     """Get scanners by type."""
     scanners = {
         "api": [BOLAScanner, AuthScanner, DataExposureScanner, MassAssignmentScanner,
@@ -76,10 +75,10 @@ def get_scanners_by_type(client: httpx.Client, scan_type: str) -> list:
     return [cls(client) for cls in scanners.get(scan_type, [])]
 
 
-async def run_scan_sequential(target: Target, scanners: list) -> list:
+async def run_scan_sequential(target: Target, scanners: list[Scanner]) -> list[ScanResult]:
     """Run all scanners sequentially against target."""
     logger = get_logger("cli")
-    results = []
+    results: list[ScanResult] = []
     for scanner in scanners:
         console.print(f"  [dim]Running {scanner.name}...[/dim]")
         try:
@@ -93,10 +92,10 @@ async def run_scan_sequential(target: Target, scanners: list) -> list:
 
 async def run_scan_parallel(
     target: Target,
-    scanners: list,
+    scanners: list[Scanner],
     max_concurrent: int = 5,
     rate_limit: float = 0.1,
-) -> List[ScanResult]:
+) -> list[ScanResult]:
     """
     Run scanners in parallel with concurrency limit and rate limiting.
 
@@ -108,11 +107,11 @@ async def run_scan_parallel(
     """
     logger = get_logger("cli")
     semaphore = asyncio.Semaphore(max_concurrent)
-    results: List[ScanResult] = []
-    errors: List[str] = []
+    results: list[ScanResult] = []
+    errors: list[str] = []
     lock = asyncio.Lock()
 
-    async def run_scanner(scanner, progress, task_id):
+    async def run_scanner(scanner: Scanner, progress: Progress, task_id: TaskID) -> None:
         async with semaphore:
             # Rate limiting - wait before starting
             await asyncio.sleep(rate_limit)
@@ -154,10 +153,10 @@ async def run_scan_parallel(
 
 async def run_scan(
     target: Target,
-    scanners: list,
+    scanners: list[Scanner],
     parallel: int = 1,
     rate_limit: float = 0.1,
-) -> list:
+) -> list[ScanResult]:
     """Run all scanners against target."""
     if parallel > 1:
         return await run_scan_parallel(target, scanners, parallel, rate_limit)

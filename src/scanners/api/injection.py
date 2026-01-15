@@ -16,7 +16,7 @@ class InjectionScanner(Scanner):
     description = "Detects SQL injection and command injection (V06, V07)"
 
     @property
-    def sql_payloads(self) -> list:
+    def sql_payloads(self) -> list[str]:
         """Get SQL injection payloads from config."""
         payloads = get_payloads("sql_injection")
         if not payloads:
@@ -31,7 +31,7 @@ class InjectionScanner(Scanner):
         return payloads
 
     @property
-    def cmd_payloads(self) -> list:
+    def cmd_payloads(self) -> list[str]:
         """Get command injection payloads from config."""
         payloads = get_payloads("command_injection")
         if not payloads:
@@ -76,7 +76,7 @@ class InjectionScanner(Scanner):
             logger.debug(f"Failed to get token: {e}")
         return None
 
-    async def _check_sqli(self, target: Target, headers: dict, result: ScanResult):
+    async def _check_sqli(self, target: Target, headers: dict[str, str], result: ScanResult) -> None:
         """Check for SQL injection using robust pattern detection."""
         search_endpoints = [
             "/api/products?search=",
@@ -161,7 +161,7 @@ class InjectionScanner(Scanner):
                 except Exception as e:
                     logger.debug(f"SQLi test failed for {endpoint}: {e}")
 
-    async def _check_cmdi(self, target: Target, headers: dict, result: ScanResult):
+    async def _check_cmdi(self, target: Target, headers: dict[str, str], result: ScanResult) -> None:
         """Check for command injection using robust pattern detection."""
         cmd_endpoints = [
             ("/api/tools/ping", "host"),

@@ -4,7 +4,6 @@ import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Any
 
 import httpx
 import yaml
@@ -13,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from src.core import Target, ScanResult, get_logger
+from src.core import Target, ScanResult, Scanner, get_logger
 from src.scanners import (
     AuthScanner,
     BOLAScanner,
@@ -43,9 +42,9 @@ class Challenge:
     difficulty: Difficulty
     scanner_type: str
     vulnerability_id: str
-    hints: List[str] = field(default_factory=list)
-    resources: List[str] = field(default_factory=list)
-    learning_objectives: List[str] = field(default_factory=list)
+    hints: list[str] = field(default_factory=list)
+    resources: list[str] = field(default_factory=list)
+    learning_objectives: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -54,12 +53,12 @@ class LearningPath:
     id: str
     name: str
     description: str
-    challenges: List[str]  # Challenge IDs
-    prerequisites: List[str] = field(default_factory=list)
+    challenges: list[str]  # Challenge IDs
+    prerequisites: list[str] = field(default_factory=list)
 
 
 # Default challenges mapping to VulnAPI vulnerabilities
-DEFAULT_CHALLENGES: Dict[str, Challenge] = {
+DEFAULT_CHALLENGES: dict[str, Challenge] = {
     "V01": Challenge(
         id="V01",
         name="Broken Object Level Authorization (BOLA)",
@@ -219,7 +218,7 @@ DEFAULT_CHALLENGES: Dict[str, Challenge] = {
 }
 
 # Default learning paths
-DEFAULT_PATHS: Dict[str, LearningPath] = {
+DEFAULT_PATHS: dict[str, LearningPath] = {
     "beginner": LearningPath(
         id="beginner",
         name="API Security Fundamentals",
@@ -249,13 +248,13 @@ class TrainingMode:
     def __init__(
         self,
         target_url: str = "http://localhost:8000",
-        config_path: Optional[str] = None,
+        config_path: str | None = None,
     ):
         self.target_url = target_url.rstrip("/")
         self.challenges = DEFAULT_CHALLENGES.copy()
         self.paths = DEFAULT_PATHS.copy()
-        self.completed: List[str] = []
-        self.client: Optional[httpx.Client] = None
+        self.completed: list[str] = []
+        self.client: httpx.Client | None = None
 
         if config_path:
             self._load_config(config_path)
@@ -281,7 +280,7 @@ class TrainingMode:
                     )
                     self.challenges[ch.id] = ch
 
-    def _get_scanner(self, scanner_type: str, client: httpx.Client):
+    def _get_scanner(self, scanner_type: str, client: httpx.Client) -> Scanner | None:
         """Get scanner instance by type."""
         scanners = {
             "auth": AuthScanner,
@@ -295,7 +294,7 @@ class TrainingMode:
             return scanner_class(client)
         return None
 
-    async def _get_flag(self, challenge_id: str) -> Optional[str]:
+    async def _get_flag(self, challenge_id: str) -> str | None:
         """Try to get flag from VulnAPI for completed challenge."""
         try:
             # Login first
@@ -409,7 +408,7 @@ class TrainingMode:
 
         return found
 
-    async def run_all(self) -> Dict[str, bool]:
+    async def run_all(self) -> dict[str, bool]:
         """Run all challenges and return results."""
         results = {}
 
@@ -428,7 +427,7 @@ class TrainingMode:
 
         return results
 
-    async def run_path(self, path_id: str) -> Dict[str, bool]:
+    async def run_path(self, path_id: str) -> dict[str, bool]:
         """Run all challenges in a learning path."""
         path = self.paths.get(path_id)
         if not path:
@@ -453,7 +452,7 @@ class TrainingMode:
 
         return results
 
-    def _print_summary(self, results: Dict[str, bool]) -> None:
+    def _print_summary(self, results: dict[str, bool]) -> None:
         """Print challenge results summary."""
         table = Table(title="Challenge Results")
         table.add_column("Challenge", style="cyan")
