@@ -30,3 +30,8 @@ ENV/
 *.swp
 *.swo
 .DS_Store
+
+# Artefacts de test
+.coverage
+.coverage.*
+htmlcov/

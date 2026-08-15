@@ -169,7 +169,9 @@ Use SARIF output for GitHub Code Scanning:
     sarif_file: results.sarif
 ```
 
-See `.github/workflows/api-security-scan.yml` for a complete example.
+A ready-to-use workflow ships with this repository, currently disabled
+(`.github/workflows/api-security-scan.yml.disabled`): rename it to `.yml` to
+enable it. It runs the scanner on push and weekly.
 
 ## License
 
